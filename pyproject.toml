@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arc-solver"
+version = "0.1.0"
+description = "Test-time Bayesian program induction for ARC-AGI-2 (ARC Prize 2026 Paper Track)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "SebAustin" }]
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+viz = ["matplotlib>=3.6"]
+llm = ["openai>=1.0", "anthropic>=0.40"]
+ttt = ["torch>=2.1"]
+dev = ["pytest>=7.4", "pytest-cov>=4.1", "matplotlib>=3.6"]
+
+[project.scripts]
+arc-solve = "arc_solver.cli.solve:main"
+arc-eval = "arc_solver.cli.run_eval:main"
+arc-submission = "arc_solver.cli.make_submission:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["arc_solver"]
+omit = ["*/cli/*", "*/llm_client.py"]

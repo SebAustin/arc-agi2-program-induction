@@ -1,0 +1,27 @@
+# Data (publicly downloadable; not vendored into git)
+/data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Outputs (reports/ ARE committed as evidence for the paper's numbers)
+/outputs/
+*.log
+
+# Env / secrets
+.env
+.venv/
+venv/
+
+# OS
+.DS_Store
