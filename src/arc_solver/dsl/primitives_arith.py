@@ -24,9 +24,9 @@ def _halves(arr: np.ndarray) -> tuple[np.ndarray, np.ndarray] | None:
     """Split into two equal halves along the longer even axis."""
     h, w = arr.shape
     if w % 2 == 0 and w >= 2:
-        return arr[:, : w // 2], arr[:, w // 2 :]
+        return arr[:, : w // 2].copy(), arr[:, w // 2 :].copy()
     if h % 2 == 0 and h >= 2:
-        return arr[: h // 2, :], arr[h // 2 :, :]
+        return arr[: h // 2, :].copy(), arr[h // 2 :, :].copy()
     return None
 
 

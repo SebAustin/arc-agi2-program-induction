@@ -12,7 +12,7 @@ Mapping each committed requirement and success criterion to its evidence.
 | Kaggle notebook (offline, no network) | ✅ | `notebooks/kaggle_submission.ipynb` (validated; offline `EnumerativeProposer` only) |
 | Cover image + media gallery | ✅ | `assets/cover.png`, `assets/gallery/*.png` (6 solved tasks) |
 | README + runbook + ADRs | ✅ | `README.md`, `docs/RUNBOOK.md`, `docs/ADRs.md` |
-| Security review | ✅ | `SECURITY.md` (0 CRITICAL / 0 HIGH; F1 hardening applied) |
+| Security review | ✅ | `SECURITY.md` (0 CRITICAL / 0 HIGH; F1 + F8 sandbox hardening applied) |
 | Assumptions log | ✅ | `ASSUMPTIONS.md` |
 | LLM-amortised + refinement (optional path) | ✅ | `src/arc_solver/search/llm_proposer.py`, validated with `MockClient` (no network) |
 
@@ -20,8 +20,8 @@ Mapping each committed requirement and success criterion to its evidence.
 
 | Criterion | Target | Result |
 | --- | --- | --- |
-| Tests green | all pass | ✅ 94 tests pass |
-| Coverage on core packages | ≥ 80% | ✅ ~91% total; dsl/search/select/io/grid/eval all ≥ 83% |
+| Tests green | all pass | ✅ 113 tests pass |
+| Coverage on core packages | ≥ 80% | ✅ ~94% total; dsl/search/select/io/grid/eval all ≥ 87% |
 | Offline end-to-end solves trivial tasks | yes | ✅ identity/flip/recolor/tile/gravity (M5 gate) |
 | Real accuracy number on public eval | yes | ✅ ARC-AGI-1 train 9.25%, eval 3.00%; ARC-AGI-2 eval 0% @2s (see below) |
 | Schema-valid offline submission, every task present | yes | ✅ `make_submission` + notebook; verified schema |

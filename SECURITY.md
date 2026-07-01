@@ -101,6 +101,7 @@ reopen an escape. See F1 remediation for hardening that removes this fragility.
 | F5 | LOW | Substring screen over-blocks benign identifiers (correctness, not security) | `dsl/sandbox.py:59-63` |
 | F6 | INFO | No prompt-injection hardening on model output (by design) | `search/llm_proposer.py:74-83` |
 | F7 | INFO | No dependency vulnerability scanning configured | `pyproject.toml` |
+| F8 | MEDIUM | `str.format` dunder-smuggling defeated both screens (re-audit) — **FIXED** | `dsl/sandbox.py` (format-vehicle + string-literal screen) |
 
 ### F1 — Sandbox is a substring denylist; the real boundary is the builtins allow-list (MEDIUM)
 **Evidence.** `_FORBIDDEN` (`sandbox.py:26-44`) is a substring denylist; `_screen`
@@ -120,7 +121,9 @@ reopens a real arbitrary-file-read / `os`-import escape with no failing test to 
 1. Replace substring screening with an **AST allow-list** (`ast.parse` then walk):
    reject `ast.Attribute` whose `.attr` starts with `f_`/`gi_`/`cr_`/`tb_` or is a
    dunder, reject `ast.Import`/`ast.ImportFrom`, and optionally allow only a known set
-   of node types. This kills the entire frame-walk class regardless of builtins.
+   of node types. This closes the *direct* frame-walk class (dunder/`f_`/`gi_`
+   attribute nodes) — but note it does **not** by itself close indirect traversal
+   through data-controlled format templates; see **F8**, which patched that gap.
 2. Add `"__builtins__": {...}` *and* explicitly set unused dangerous builtins to absent
    (already done) — keep the allow-list frozen and add a test asserting its exact contents
    so additions are deliberate.
@@ -180,6 +183,31 @@ in the toolchain (none installed). No pinned lockfile.
 **Remediation.** Add `pip-audit` to the `dev` extra and a CI step; add `bandit -r src/`
 (it would flag the `exec` at `sandbox.py:75`, which is intentional and `# noqa: S102`-annotated).
 
+### F8 — `str.format` dunder-smuggling defeated both screens (MEDIUM) — FIXED
+**Evidence (re-audit; reproduced).** A model-emitted transform can build a dunder at
+runtime from single `"_"` pieces and hide it inside a **format template string**, then
+let `str.format` perform the attribute traversal:
+```python
+def transform(grid):
+    u='_'; name=u+u+'class'+u+u   # "__class__" — source never contains literal "__"
+    spec='{0.'+name+'}'           # "{0.__class__}"
+    return spec.format(grid)      # str.format does the getattr internally
+```
+This **passed both the substring screen** (no literal `"__"` in source) **and the AST
+screen** (the dunder lives in an `ast.Constant`, not an `ast.Attribute`), i.e. it
+reopened the exact frame/dunder-walk class F1 claimed to have closed. Blast radius is
+capped today — `str.format` only does `getattr`/`getitem`, never a call, and the only
+reachable `__globals__` is the restricted namespace — so it is a confirmed **screen
+defeat / attribute-traversal + info-disclosure primitive**, not a demonstrable RCE
+under the local single-user model. The real risk is regression: it re-arms the escape
+surface if any pure-Python helper or a call primitive later becomes reachable.
+**Remediation (applied).** Deny the traversal *vehicle*: `format`, `format_map`, and
+`vformat` are now rejected as `ast.Attribute` accesses (`_FORBIDDEN_FORMAT_ATTRS`), plus
+a defense-in-depth rule rejecting any string literal containing `"__"` or a
+frame-introspection marker. Regression test `test_ast_screen_blocks_format_string_smuggling`
+(three vectors) added to `tests/test_sandbox.py`. The four bypass probes now raise
+`SandboxError: forbidden attribute access: 'format'`; the full suite is green.
+
 ---
 
 ## 5. Secret & input-validation verification (completed)
@@ -205,13 +233,18 @@ in the toolchain (none installed). No pinned lockfile.
   or is a frame/introspection attribute (`gi_frame`, `f_back`, `f_globals`,
   `f_builtins`, `f_code`, `tb_frame`, `cr_frame`, ...), and any `ast.Name`
   referencing a dangerous identifier (`eval`, `exec`, `getattr`, `type`, `vars`,
-  `globals`, ...). This kills the entire frame-walk class regardless of the
-  builtins allow-list. A **frozen-builtins regression test** asserts
+  `globals`, ...). This closes the *direct* frame-walk class (dunder/frame
+  attribute nodes and dangerous name references) — the indirect
+  format-template traversal that slipped past it was closed separately under
+  **F8**. A **frozen-builtins regression test** asserts
   `_SAFE_BUILTINS` contains none of the risky names, and `tests/test_sandbox.py`
   now includes escape-vector tests (`gi_frame.f_builtins`, dunder pivots,
   `getattr`/`type` references) — all asserted to raise `SandboxError`. F5
   (substring false positives) is partially subsumed: the substring filter remains
   as a cheap first pass but the AST screen is the real boundary.
+- **F8 — FIXED (re-audit).** `dsl/sandbox.py` denies the `format`/`format_map`/
+  `vformat` traversal vehicle and screens string literals for `"__"`/frame markers;
+  regression test added. Closes the format-template escape that bypassed F1's screen.
 - **Ranked backlog (remaining):** F2/F3 (LOW — rlimit + portable timeout) →
   F4 (LOW — strict fence extraction) → F7 (INFO — add `pip-audit`/`bandit` to CI)
   → F6 (INFO — revisit only if task inputs become untrusted).

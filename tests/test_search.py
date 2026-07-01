@@ -4,9 +4,15 @@ from __future__ import annotations
 
 from arc_solver.config import Budget
 from arc_solver.dsl.program import Op
+from arc_solver.search.engine import SolveEngine
 from arc_solver.search.enumerative import EnumerativeProposer
 from arc_solver.search.fitted import FittedProposer, _fit_color_map, _fit_scale
-from arc_solver.search.mdl import description_length, prior_logp
+from arc_solver.search.mdl import (
+    _COLOR_BITS,
+    _param_bits,
+    description_length,
+    prior_logp,
+)
 from arc_solver.search.verifier import consistent, partial_score
 from arc_solver.select.posterior import posterior_weights
 from conftest import make_task
@@ -104,3 +110,70 @@ def test_fit_scale(tile_task):
 def test_fitted_proposes_solution(recolor_task):
     prog = _find_consistent(FittedProposer(), recolor_task, Budget())
     assert prog is not None and consistent(prog, recolor_task)
+
+
+# --- MDL param formula ------------------------------------------------------ #
+
+
+def test_param_bits_formula():
+    """Pin the exact per-type parameter cost (the formula IS the object here)."""
+    assert _param_bits(True) == 1.0  # bool before int (bool is an int subclass)
+    assert _param_bits(5) == _COLOR_BITS
+    assert _param_bits("down") == 2.0  # small string enum
+    assert _param_bits((1, 2)) == 2 * _COLOR_BITS  # sum over elements
+    assert _param_bits({1: 2, 3: 4}) == 2 * (2 * _COLOR_BITS)  # len * 2*colour
+
+
+# --- Verifier None-output path ---------------------------------------------- #
+
+
+def test_consistent_skips_none_output_pair():
+    """A train pair with a missing output is skipped, not treated as a failure."""
+    g = ((1, 2), (3, 4))
+    task = make_task([(g, g), (g, None)], [(g, None)])
+    assert consistent((Op("identity"),), task)
+
+
+# --- Engine: dedup, early-stop, determinism --------------------------------- #
+
+
+class _ListProposer:
+    """A fake proposer that yields a fixed program list and records invocation."""
+
+    def __init__(self, programs):
+        self._programs = programs
+        self.called = False
+
+    def propose(self, task, *, budget, feedback=None):
+        self.called = True
+        yield from self._programs
+
+
+def test_engine_dedup_keeps_cheapest_program(identity_task):
+    expensive = (Op("rot90"),) * 4  # identity behaviour, 4 ops
+    cheap = (Op("identity"),)  # identity behaviour, 1 op
+    engine = SolveEngine(
+        [_ListProposer([expensive, cheap])],
+        Budget(max_seconds=5),
+        early_stop_admissible=999,
+    )
+    result = engine.solve(identity_task)
+    assert result.meta["n_admissible"] == 1  # collapsed to one behaviour
+    assert result.best_program == cheap  # cheaper representative survives
+
+
+def test_engine_early_stop_skips_second_proposer(identity_task):
+    first = _ListProposer([(Op("identity"),)])
+    second = _ListProposer([(Op("rot90"),)])
+    SolveEngine([first, second], Budget(max_seconds=5), early_stop_admissible=1).solve(
+        identity_task
+    )
+    assert first.called
+    assert not second.called  # skipped once the first proposer already fit
+
+
+def test_engine_deterministic_across_runs(recolor_task):
+    engine = SolveEngine(
+        [FittedProposer(), EnumerativeProposer()], Budget(max_seconds=5)
+    )
+    assert engine.solve(recolor_task).attempts == engine.solve(recolor_task).attempts

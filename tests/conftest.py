@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from arc_solver.io.task import Grid, Pair, Task
+from arc_solver.io.task import Pair, Task
 
 
 def make_task(train_pairs, test_pairs, task_id="t") -> Task:

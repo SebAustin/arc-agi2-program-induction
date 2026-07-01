@@ -22,6 +22,8 @@ from arc_solver.dsl.interpreter import run
 from arc_solver.io.task import Grid
 from arc_solver.select.posterior import ScoredProgram
 
+_NUM_COLORS = 10  # ARC palette is colours 0-9
+
 
 def _output_mass(
     scored: list[ScoredProgram], test_input: Grid
@@ -32,7 +34,10 @@ def _output_mass(
         out = run(sp.program, test_input)
         if out is not None:
             mass[out] += sp.weight
-    return sorted(mass.items(), key=lambda kv: kv[1], reverse=True)
+    # Heaviest first; ties broken by the canonical (lexicographically smallest)
+    # grid so the posterior *mode* is a well-defined function of the posterior
+    # mass alone, not of proposer/enumeration order (reproducibility).
+    return sorted(mass.items(), key=lambda kv: (-kv[1], kv[0]))
 
 
 def pick_for_input(scored: list[ScoredProgram], test_input: Grid) -> tuple[Grid, Grid]:
@@ -57,12 +62,23 @@ def pick_top2(
 
 
 def _fallback_alt(grid: Grid) -> Grid:
-    """A cheap second guess distinct from ``grid`` when no alternative exists.
+    """A cheap second guess *guaranteed distinct* from ``grid``.
 
-    Uses the horizontal mirror; if the grid is mirror-symmetric (so the mirror
-    equals the grid), falls back to a 180-degree rotation.
+    Tries a ladder of structure-preserving transforms (horizontal mirror,
+    vertical mirror, 180-degree rotation) and returns the first that differs, so
+    the hedge stays meaningful for ordinary grids. A grid invariant under all of
+    them is constant-under-symmetry (e.g. a solid colour or a palindrome that is
+    also row-order-symmetric); for that degenerate case we deterministically
+    perturb the top-left cell so ``attempt_2`` never collapses onto ``attempt_1``
+    and silently waste a pass@2 guess.
     """
-    mirrored = tuple(tuple(reversed(row)) for row in grid)
-    if mirrored != grid:
-        return mirrored
-    return tuple(tuple(reversed(row)) for row in reversed(grid))
+    flip_h = tuple(tuple(reversed(row)) for row in grid)
+    flip_v = tuple(reversed(grid))
+    rot180 = tuple(tuple(reversed(row)) for row in reversed(grid))
+    for candidate in (flip_h, flip_v, rot180):
+        if candidate != grid:
+            return candidate
+    # Fully symmetric grid: no transform escapes it. Perturb one cell.
+    rows = [list(row) for row in grid]
+    rows[0][0] = (rows[0][0] + 1) % _NUM_COLORS
+    return tuple(tuple(row) for row in rows)

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import signal
+import time
+
 import pytest
 
 from arc_solver.dsl.sandbox import SandboxError, run_transform
@@ -81,3 +84,48 @@ def test_frozen_safe_builtins():
         "object",
     }
     assert risky.isdisjoint(_SAFE_BUILTINS.keys())
+
+
+@pytest.mark.parametrize(
+    "src",
+    [
+        # str.format with a runtime-built dunder ("_"+"_"+...) traverses attributes
+        # while hiding "__" from the substring screen and the dunder from the AST
+        # attribute rule (it lives in a string constant). The format *vehicle* is
+        # denied outright, so all of these must be rejected.
+        (
+            "def transform(grid):\n"
+            " u='_'\n"
+            " name=u+u+'class'+u+u\n"
+            " spec='{0.'+name+'}'\n"
+            " s=spec.format(grid)\n"
+            " return grid\n"
+        ),
+        (
+            "def transform(grid):\n"
+            " u='_'\n"
+            " c=u+u+'class'+u+u\n"
+            " spec='{grid.'+c+'}'\n"
+            " s=spec.format_map({'grid':grid})\n"
+            " return grid\n"
+        ),
+        # Literal-template variant: dunder marker inside a string constant.
+        "def transform(grid):\n s='{0.__class__}'.format(grid)\n return grid\n",
+    ],
+)
+def test_ast_screen_blocks_format_string_smuggling(src):
+    with pytest.raises(SandboxError):
+        run_transform(src, ((1,),))
+
+
+@pytest.mark.skipif(
+    not hasattr(signal, "SIGALRM"), reason="wall-clock timeout needs POSIX SIGALRM"
+)
+def test_infinite_loop_is_killed_by_timeout():
+    """The safety-critical claim: a runaway transform is aborted, not hung."""
+    src = "def transform(grid):\n    while True:\n        pass\n    return grid"
+    start = time.monotonic()
+    result = run_transform(src, ((1,),), timeout_s=0.2)
+    elapsed = time.monotonic() - start
+    assert result is None  # killed and swallowed to a non-result
+    assert elapsed < 2.0  # returned promptly rather than hanging

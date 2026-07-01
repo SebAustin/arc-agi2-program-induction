@@ -38,7 +38,7 @@ def crop_to_content(arr: np.ndarray) -> np.ndarray | None:
     r0, r1, c0, c1 = rows[0], rows[-1], cols[0], cols[-1]
     if (r1 - r0 + 1, c1 - c0 + 1) == arr.shape:
         return None  # nothing to crop
-    return arr[r0 : r1 + 1, c0 : c1 + 1]
+    return arr[r0 : r1 + 1, c0 : c1 + 1].copy()  # own the buffer (no aliasing)
 
 
 @register("tile", cost_bits=_SHAPE_COST + 1.0, param_space=_scale_space)
@@ -74,7 +74,7 @@ def trim_border(arr: np.ndarray) -> np.ndarray | None:
     """Remove the outermost one-cell ring."""
     if arr.shape[0] <= 2 or arr.shape[1] <= 2:
         return None
-    return arr[1:-1, 1:-1]
+    return arr[1:-1, 1:-1].copy()  # own the buffer (no aliasing)
 
 
 @register("repair_symmetry", cost_bits=_SHAPE_COST, param_space=_color_space)

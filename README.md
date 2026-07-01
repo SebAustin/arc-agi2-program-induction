@@ -86,7 +86,7 @@ src/arc_solver/
   viz/      ARC-palette grid rendering
   cli/      solve / run_eval / make_submission
 notebooks/  kaggle_submission.ipynb  (self-contained, offline)
-tests/      88 tests, ~91% coverage
+tests/      113 tests, ~94% coverage
 docs/       WRITEUP.md (paper), THEORY.md (extended), ADRs
 ```
 

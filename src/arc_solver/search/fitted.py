@@ -71,7 +71,7 @@ def _fit_scale(task: Task) -> tuple[int, int] | None:
     """Infer a consistent integer (ky, kx) output/input size ratio."""
     factor: tuple[int, int] | None = None
     for pair in task.train:
-        if pair.output is None:
+        if pair.output is None or not pair.input or not pair.output:
             return None
         ih, iw = len(pair.input), len(pair.input[0])
         oh, ow = len(pair.output), len(pair.output[0])

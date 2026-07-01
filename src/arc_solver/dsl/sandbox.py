@@ -126,6 +126,13 @@ _FORBIDDEN_ATTRS = frozenset(
     }
 )
 
+# str.format / str.format_map / string.Formatter.vformat perform attribute and
+# item access on a data-controlled template string ("{0.__class__...}"). The
+# dunder can be built at runtime from single "_" pieces, so it is invisible to
+# both the "__" substring screen and the ast.Attribute rule. Denying the
+# traversal *vehicle* itself closes that entire class of format-string escapes.
+_FORBIDDEN_FORMAT_ATTRS = frozenset({"format", "format_map", "vformat"})
+
 
 def _screen(source: str) -> None:
     """Fast substring pre-filter (cheap rejection of obvious bad source)."""
@@ -150,10 +157,20 @@ def _ast_screen(source: str) -> None:
             raise SandboxError("imports are not permitted in transform source")
         if isinstance(node, ast.Attribute):
             attr = node.attr
-            if attr.startswith("_") or attr in _FORBIDDEN_ATTRS:
+            if (
+                attr.startswith("_")
+                or attr in _FORBIDDEN_ATTRS
+                or attr in _FORBIDDEN_FORMAT_ATTRS
+            ):
                 raise SandboxError(f"forbidden attribute access: {attr!r}")
         if isinstance(node, ast.Name) and node.id in _FORBIDDEN_NAMES:
             raise SandboxError(f"forbidden name reference: {node.id!r}")
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            lit = node.value
+            if "__" in lit or any(fa in lit for fa in _FORBIDDEN_ATTRS):
+                raise SandboxError(
+                    "forbidden dunder/introspection marker in string literal"
+                )
 
 
 class _Timeout(Exception):
