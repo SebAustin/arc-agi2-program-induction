@@ -17,6 +17,7 @@ htmlcov/
 # Outputs (reports/ ARE committed as evidence for the paper's numbers)
 /outputs/
 *.log
+/submission.json
 
 # Env / secrets
 .env

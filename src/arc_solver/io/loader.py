@@ -58,20 +58,31 @@ def _parse_pair(raw: dict, *, require_output: bool) -> Pair:
     return Pair(input=grid_in, output=grid_out)
 
 
+def _parse_task_entry(task_id: str, raw: object) -> Task:
+    if not isinstance(raw, dict) or "train" not in raw or "test" not in raw:
+        raise ValueError(f"task {task_id!r} must have 'train' and 'test'")
+    train_raw = raw["train"]
+    test_raw = raw["test"]
+    if not isinstance(train_raw, list) or not isinstance(test_raw, list):
+        raise ValueError(f"task {task_id!r}: 'train' and 'test' must be lists")
+    train = tuple(_parse_pair(p, require_output=True) for p in train_raw)
+    test = tuple(_parse_pair(p, require_output=False) for p in test_raw)
+    if not train:
+        raise ValueError(f"task {task_id!r} has no train pairs")
+    if not test:
+        raise ValueError(f"task {task_id!r} has no test pairs")
+    return Task(task_id=task_id, train=train, test=test)
+
+
 def load_task(path: str) -> Task:
     """Load and validate a single task JSON file."""
     with open(path, "r", encoding="utf-8") as fh:
         raw = json.load(fh)
-    if not isinstance(raw, dict) or "train" not in raw or "test" not in raw:
-        raise ValueError(f"{path}: task must have 'train' and 'test'")
     task_id = os.path.splitext(os.path.basename(path))[0]
-    train = tuple(_parse_pair(p, require_output=True) for p in raw["train"])
-    test = tuple(_parse_pair(p, require_output=False) for p in raw["test"])
-    if not train:
-        raise ValueError(f"{path}: task has no train pairs")
-    if not test:
-        raise ValueError(f"{path}: task has no test pairs")
-    return Task(task_id=task_id, train=train, test=test)
+    try:
+        return _parse_task_entry(task_id, raw)
+    except ValueError as exc:
+        raise ValueError(f"{path}: {exc}") from exc
 
 
 def load_dataset(directory: str) -> list[Task]:
@@ -80,3 +91,31 @@ def load_dataset(directory: str) -> list[Task]:
     if not paths:
         raise FileNotFoundError(f"no task JSON found in {directory}")
     return [load_task(p) for p in paths]
+
+
+def load_challenges(path: str) -> list[Task]:
+    """Load the competition's combined-challenges JSON into a list of ``Task``.
+
+    This is the format Kaggle mounts for ARC Prize 2026 — a single JSON file
+    shaped ``{"<task_id>": {"train": [...], "test": [...]}}`` rather than one
+    file per task. Test pairs never carry an ``"output"`` key (the answer is
+    hidden at scoring time), so it is never required here; train pairs still
+    require one. Tasks are returned sorted by ``task_id`` for determinism.
+
+    Raises:
+        ValueError: if the top-level JSON is not an object, or any task entry
+            is malformed (missing train/test, empty, or fails grid validation).
+    """
+    with open(path, "r", encoding="utf-8") as fh:
+        raw = json.load(fh)
+    if not isinstance(raw, dict):
+        raise ValueError(f"{path}: combined challenges file must be a JSON object")
+    if not raw:
+        raise ValueError(f"{path}: combined challenges file has no tasks")
+    tasks: list[Task] = []
+    for task_id in sorted(raw):
+        try:
+            tasks.append(_parse_task_entry(task_id, raw[task_id]))
+        except ValueError as exc:
+            raise ValueError(f"{path}: {exc}") from exc
+    return tasks

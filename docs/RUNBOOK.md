@@ -29,20 +29,46 @@ expands search depth and can only raise coverage.
 
 ## 3. Build a Kaggle submission
 
+`arc_solver.cli.make_submission` accepts **either** on-disk shape via `--data`,
+auto-detected from whether the path is a file or a directory:
+
+- A **combined-challenges JSON file** — the real Kaggle rerun format,
+  `{"<task_id>": {"train": [...], "test": [...]}}`, parsed with
+  `io.loader.load_challenges`. This is what the competition actually mounts:
+  `/kaggle/input/arc-prize-2026-arc-agi-2/arc-agi_test_challenges.json`.
+- A **directory** of one-task-per-file JSON (the public ARC-AGI-1/-2 layout
+  under `data/`), parsed with `io.loader.load_dataset`, for local development.
+
 ```bash
+# Local development, per-task-file directory:
 python -m arc_solver.cli.make_submission \
   --data data/arc_agi_2/evaluation --out submission.json \
+  --task-seconds 10 --total-seconds 39600
+
+# Kaggle-shaped combined-challenges file (same command works locally against
+# a locally-built combined file, or verbatim inside the Kaggle notebook):
+python -m arc_solver.cli.make_submission \
+  --data /kaggle/input/arc-prize-2026-arc-agi-2/arc-agi_test_challenges.json \
+  --out /kaggle/working/submission.json \
   --task-seconds 10 --total-seconds 39600
 ```
 
 - `--total-seconds` is a wall-clock guard; on expiry every remaining task gets a
   safe identity/mirror fallback so **no task is missing** (a hard requirement).
-- The notebook `notebooks/kaggle_submission.ipynb` does the same thing inside the
-  Kaggle sandbox. Attach this repo's `src/` as a Kaggle Dataset (e.g.
-  `arc-solver-src`); the setup cell finds it automatically.
+- The notebook `notebooks/kaggle_submission.ipynb` does the same thing inside
+  the Kaggle sandbox: it locates the combined-challenges file (test →
+  evaluation-challenges dry run → local fallback), loads it with
+  `load_challenges`, solves under the same wall-clock guard, and writes to
+  `/kaggle/working/submission.json`. Attach this repo's `src/` as a Kaggle
+  Dataset (e.g. `arc-solver-src`); the setup cell finds it automatically.
+- See `DEPLOYMENT.md` for the full non-expert, step-by-step Kaggle rollout
+  (dataset attach, internet-off, data attach, Save & Run All, Submit) and a
+  local dry-run recipe that builds a small combined-challenges file from
+  `data/` to validate the pipeline before uploading anything.
 
 ### Recording the leaderboard submission (for the paper's Accuracy criterion)
-1. Push the notebook + `src/` dataset to Kaggle; run to produce `submission.json`.
+1. Push the notebook + `src/` dataset to Kaggle; run to produce
+   `/kaggle/working/submission.json`.
 2. Submit; note the **submission ID** shown on the competition page.
 3. Put that ID in the write-up so judges can match notebook → leaderboard score.
 
