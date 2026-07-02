@@ -45,6 +45,20 @@ explicitly. Two ways, in order of recommendation:
 
 ### Option A — attach `src/` as a Kaggle Dataset (recommended)
 
+**Shortcut — build the upload folder with one command:**
+
+```bash
+scripts/prepare_kaggle_dataset.sh YOUR_KAGGLE_USERNAME
+```
+
+This stages `build/kaggle-dataset/arc-solver-src/` containing `src/arc_solver/**`
+(caches stripped) plus the `dataset-metadata.json` Kaggle needs, and prints the
+exact `kaggle datasets create` / web-UI steps. It does **not** upload — that
+stays your action. `build/` is gitignored. Then either run the printed
+`kaggle datasets create -p <folder>` (needs `pip install kaggle` + an API token
+in `~/.kaggle/kaggle.json`), or drag the staged `src/` folder into the web UI.
+The manual equivalent is below.
+
 1. Go to `kaggle.com/datasets` → **New Dataset**.
 2. Upload this repo's `src/` directory (the folder containing `arc_solver/`,
    not the repo root — do not upload `data/`, it is large and gitignored
@@ -119,6 +133,19 @@ Do this **before** spending a Kaggle Save & Run All cycle. It exercises the
 exact same code path (`load_challenges` → engine → `SubmissionWriter`) against
 a combined-challenges file built from local public data, so you catch loader
 or schema problems for free.
+
+> **Validated this session (local):** both the `make_submission` dry run **and**
+> a full cell-by-cell execution of `notebooks/kaggle_submission.ipynb` were run
+> against `data/kaggle_dry_run_challenges.json` and produced a schema-valid
+> `submission.json` with every task present. Only the Kaggle-infra steps (§1–§2)
+> remain for you.
+>
+> **Interpreter note:** use the Python that has `numpy` installed. On this
+> machine bare `python`/`python3` resolved to a stripped system Python 3.9
+> without numpy; the working interpreter was `/opt/anaconda3/bin/python3`
+> (Python 3.13, numpy 2.3.5). If you see `ModuleNotFoundError: numpy`, you are
+> on the wrong interpreter — activate your venv/conda env first
+> (`pip install -e '.[dev]'`).
 
 ```bash
 cd "/Users/sebastienhenry/Documents/Hackathons/ARC Prize 2026 - Paper Track"
