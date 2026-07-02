@@ -63,8 +63,12 @@ The manual equivalent is below.
 2. Upload this repo's `src/` directory (the folder containing `arc_solver/`,
    not the repo root — do not upload `data/`, it is large and gitignored
    anyway).
-3. Name it `arc-solver-src` (the notebook's import cell already searches for
-   this exact slug at `/kaggle/input/arc-solver-src/src`).
+3. Name it `arc-solver-src`. The notebook's import cell **auto-discovers**
+   `arc_solver` under `/kaggle/input` (globbing for `arc_solver/__init__.py`),
+   so it works whether Kaggle mounts the dataset at
+   `/kaggle/input/arc-solver-src/…`, `/kaggle/input/datasets/<owner>/arc-solver-src/…`,
+   with the package at the root or under a `src/` wrapper. The exact slug/path
+   no longer has to match a hardcoded string.
 4. Set the dataset visibility to **public** (required so Paper Track reviewers
    and the rerun/scoring container can access it) or at minimum shared with
    the competition's scoring process per Kaggle's current rules for code
