@@ -1,0 +1,20 @@
+{
+  "id": "sebmontreal/arc-agi-2-test-time-bayesian-program-induction",
+  "title": "ARC-AGI-2 — Test-Time Bayesian Program Induction",
+  "code_file": "kaggle_submission.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "keywords": [],
+  "dataset_sources": [
+    "sebmontreal/arc-solver-src"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [
+    "arc-prize-2026-arc-agi-2"
+  ],
+  "model_sources": []
+}

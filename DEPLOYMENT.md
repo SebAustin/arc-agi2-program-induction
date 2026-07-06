@@ -131,6 +131,38 @@ If you cannot or do not want to manage a separate Dataset:
 
 ---
 
+## 2b. Attach the RIGHT competition (the #1 gotcha)
+
+The notebook needs the **`arc-prize-2026-arc-agi-2`** competition attached as a
+data source — that is the competition that ships `arc-agi_*_challenges.json`.
+
+**Do not** rely on the `arc-prize-2026-paper-track` competition for data: the
+Paper Track ships **no data files**, so if it is the only competition attached,
+`/kaggle/input/competitions/` is empty and the notebook (correctly) errors with
+"No \*challenges\*.json found". The Paper Track is only where the *Writeup* is
+submitted; the *data + code run* live in ARC-AGI-2. Having competition access
+(joined + rules accepted) is **not** the same as the data being *attached* to a
+given notebook.
+
+### Reproducible push via the API (no clicking)
+
+`notebooks/kernel-metadata.json` pins the correct configuration
+(`competition_sources: ["arc-prize-2026-arc-agi-2"]`,
+`dataset_sources: ["sebmontreal/arc-solver-src"]`, offline, CPU). To publish a
+new version of the notebook with the data correctly attached:
+
+```bash
+# push the notebook + metadata as a new version (runs it; does NOT submit)
+kaggle kernels push -p notebooks
+# watch it
+kaggle kernels status sebmontreal/arc-agi-2-test-time-bayesian-program-induction
+# once COMPLETE, inspect the produced submission + logs
+kaggle kernels output sebmontreal/arc-agi-2-test-time-bayesian-program-induction -p out/
+```
+
+A push creates a new version and runs it, but never submits to the leaderboard
+and never changes visibility — those stay explicit manual actions.
+
 ## 3. Local dry run (validate before uploading anything)
 
 Do this **before** spending a Kaggle Save & Run All cycle. It exercises the
