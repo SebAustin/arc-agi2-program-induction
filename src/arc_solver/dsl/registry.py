@@ -108,4 +108,5 @@ def load_primitives() -> None:
         primitives_object,
         primitives_shape,
         primitives_arith,
+        primitives_partition,
     )

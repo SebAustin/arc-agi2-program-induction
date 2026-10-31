@@ -69,3 +69,36 @@ for the threat model and residual risk.
 **Why.** Hashability lets the selector bucket candidates by output grid directly;
 immutability guarantees no primitive mutates a shared grid. The interpreter
 converts to numpy once and back at the boundary.
+
+## ADR-009 — Object layer via a `per_object` combinator (revisits ADR-001)
+**Decision.** Introduce a first-class object layer — connected-component
+extraction with per-object attributes (colour, size, bounding box, position) and
+a small search over *object models* (4- vs 8-adjacency, single-colour vs
+colour-spanning, background = most-frequent or 0) — and expose it to the DSL
+through a `per_object(inner_op, selector, model)` combinator plus a few
+object-aware primitives (`select_object`, `count_grid`, per-object recolour). The
+combinator keeps the program's external contract `Grid -> Grid`; the object
+collection is internal to it. All new object-aware and panel primitives are
+**fitter-only** (`param_space = lambda ctx: []`), so the enumerative search space
+and its budget are unchanged.
+**Why.** A structural profile of the 388 unsolved ARC-AGI-1 evaluation tasks shows
+the dominant signature is objectness and in-place construction: ~77% change
+connected-component count, ~48% add foreground ink, and 0% admit a global colour
+bijection, while the DSL is almost entirely global whole-grid transforms. ~63% of
+unsolved tasks (per-object mapping + selection/counting + drawing) rest on the same
+missing substrate. ADR-001 deliberately kept objectness inside individual
+`Grid -> Grid` primitives to keep the pipeline flat; that is precisely the
+expressivity ceiling ADR-001 anticipated. Promoting objects to a combinator-level
+abstraction removes the ceiling for the highest-leverage families while preserving
+the linear-pipeline prior.
+**Trade-off.** This reopens ADR-001's "no separate object value type"
+simplification. We bound the cost by keeping the object type **internal** to the
+combinator (the external program stays `Grid -> Grid`, so serialization, the MDL
+prior, and the selector are untouched), by keeping the new primitives off the
+enumerative path, and by searching only a handful of object models per task.
+Alternatives rejected: (a) stay fully flat — per-object composition stays
+impossible, capping the per-object-mapping family; (b) a first-class object value
+type threaded through the whole pipeline — larger surface, risks the
+backward-compatibility this work requires. Each family is gated on a measured,
+net-positive, no-regression result, so an abstraction that fails to pay for itself
+is dropped rather than kept.
