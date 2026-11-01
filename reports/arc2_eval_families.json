@@ -1,0 +1,14 @@
+{
+  "data": "evaluation",
+  "families": [
+    "F1",
+    "F2",
+    "F4"
+  ],
+  "n": 120,
+  "core_pass_at_2": 0.0,
+  "pass_at_2": 0.0,
+  "n_solved": 0,
+  "gains_by_family": {},
+  "regressions": []
+}

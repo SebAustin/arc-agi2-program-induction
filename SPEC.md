@@ -77,16 +77,22 @@ No LLM / TTT path; no Kaggle leaderboard submission; the submission-path
 `try/except` robustness gap is noted and parked as a separate follow-up.
 
 ## Result (measured 2026-10-31)
-Full 400-task ARC-AGI-1 evaluation, original engine vs. all families enabled,
-`max_programs=30000`, `max_seconds=10` (report: `reports/arc1_eval_families.json`):
+ARC-AGI-1, original engine vs. all three families enabled. Reproduced with
+`scripts/eval_ablation.py` against the committed core reports, and validated
+against a full `max_programs=30000, max_seconds=10` run, which it reproduces
+exactly (22/400 for F2+F1 on eval).
 
-- **pass@2: 3.00% → 5.50%** — 12 → 22 tasks solved (**+10**), **zero regressions**
-  (all 12 prior solves preserved).
-- Per-family (held-out solves): **F2 +8** (all via `panel_combine`'s learned truth
-  table), **F1 +2** (`map_object_color` by size; `per_object(flip_v)`), **F4 +0**.
-- **F4 (object selection / counting) was dropped** from the active engine — it was
-  not net-positive on the eval. Its primitives (`select_object`, `count_grid`) and
-  fitter (`search/fit_select.py`) remain in the tree, unemitted, as tested
-  scaffolding and an honest negative result for a future, richer F4.
-- Tests: 122 → 154 (+32), all green. Per-task runtime is unchanged — the new
-  families are fitter-only, so the enumerative search is untouched (ADR-009).
+- **Evaluation pass@2: 3.00% → 5.75%** — 12 → 23 tasks (**+11**); F2 +8, F1 +2,
+  F4 +1. Report: `reports/arc1_eval_families.json`.
+- **Training pass@2: 9.25% → 13.50%** — 37 → 54 tasks (**+17**); F2 +10, F1 +6,
+  F4 +1. Report: `reports/arc1_train_families.json`.
+- **Zero regressions on both splits.** ARC-AGI-2 evaluation unchanged (0.0%,
+  `reports/arc2_eval_families.json`).
+- **F4 kept.** Narrow criteria (largest/smallest/unique) added 0; richer criteria
+  (position, bounding box, uniqueness) recovered +1, so F4 is emitted.
+- **`shape`→colour recolour key excluded** from F1: it memorised a per-object
+  bijection that was train-consistent but shadowed a correct enumerative solve via
+  the engine's early-stop (the sole train regression, `9565186b`). Low-capacity
+  keys (size, colour, size-rank) are kept — the Occam discipline the prior encodes.
+- Tests: 122 → 157 (+35), all green; coverage ~94%. Per-task runtime unchanged —
+  the families are fitter-only, so the enumerative search is untouched (ADR-009).

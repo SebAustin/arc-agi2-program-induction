@@ -70,6 +70,27 @@ def test_count_grid_vertical():
     assert out is not None and out.tolist() == [[5], [5], [5]]
 
 
+def test_select_topmost_cropped():
+    sel = _select()
+    arr = np.array([[0, 0, 3], [0, 0, 0], [1, 1, 0]])  # c3 on row 0, c1 on row 2
+    out = sel(arr, (4, False, 0), ("topmost",), True)
+    assert out is not None and out.tolist() == [[3]]
+
+
+def test_select_largest_bbox_cropped():
+    sel = _select()
+    arr = np.array([[0, 0, 3], [0, 0, 0], [1, 1, 0]])  # c1 bbox area 2 > c3 area 1
+    out = sel(arr, (4, False, 0), ("largest_bbox",), True)
+    assert out is not None and out.tolist() == [[1, 1]]
+
+
+def test_select_unique_size():
+    sel = _select()
+    arr = np.array([[1, 0, 2, 0, 3, 3], [0, 0, 0, 0, 0, 0]])  # sizes [1,1,2]
+    out = sel(arr, (4, False, 0), ("unique_size",), True)
+    assert out is not None and out.tolist() == [[3, 3]]
+
+
 def _fits(progs, train, test):
     return any(
         all(run(p, pr.input) == pr.output for pr in train)

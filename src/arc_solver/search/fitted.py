@@ -25,6 +25,7 @@ from arc_solver.dsl.registry import load_primitives
 from arc_solver.grid.grid_ops import to_np
 from arc_solver.search.fit_panels import fit_panels
 from arc_solver.search.fit_recolor import fit_object_recolor
+from arc_solver.search.fit_select import fit_select
 from arc_solver.search.proposer import Feedback
 from arc_solver.io.task import Task
 
@@ -150,8 +151,8 @@ class FittedProposer:
         # 6) grid-partition / panel ops (F2)
         yield from fit_panels(task)
 
-        # 7) per-object recolour / transform (F1)
+        # 7) object selection / counting (F4)
+        yield from fit_select(task)
+
+        # 8) per-object recolour / transform (F1)
         yield from fit_object_recolor(task)
-        # Note: an object selection/counting family (F4) was built and measured
-        # (search/fit_select.py, primitives select_object/count_grid) but added 0
-        # solves on ARC-1 eval, so it is not emitted here. See SPEC.md.

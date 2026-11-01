@@ -26,8 +26,13 @@ from arc_solver.grid.grid_ops import to_np
 from arc_solver.grid.objects import ObjectModel, candidate_models, extract_objects
 from arc_solver.io.task import Task
 
+# Keys are low-capacity object attributes. "shape" is deliberately excluded: a
+# shape->colour table tends to memorise a per-object bijection (one entry per
+# object) that is train-consistent but does not generalise, and — because the
+# fitter fires and the engine early-stops — it can shadow a correct enumerative
+# solve. See SPEC.md (F1) and the train regression on 9565186b.
 _INNER_TRANSFORMS = ("flip_h", "flip_v", "rot180", "rot90", "rot270")
-_KEY_KINDS = ("size", "color", "size_rank", "shape")
+_KEY_KINDS = ("size", "color", "size_rank")
 
 
 def _eq(result, target) -> bool:

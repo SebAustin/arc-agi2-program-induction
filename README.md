@@ -35,19 +35,18 @@ normalised pass@2; the offline path is single-threaded CPU.
 
 | Dataset | Tasks | pass@2 | train-solve |
 | --- | --- | --- | --- |
-| ARC-AGI-1 training | 400 | **9.25%** | 9.75% |
-| ARC-AGI-1 evaluation | 400 | **5.50%**† | 5.50% |
+| ARC-AGI-1 training | 400 | **13.50%**† | 13.50% |
+| ARC-AGI-1 evaluation | 400 | **5.75%**† | 5.75% |
 | ARC-AGI-2 evaluation | 120 | **0.0%** (2s/task) | 0% |
 
-† ARC-AGI-1 evaluation **with the object/panel fitter families**; the
-enumerative-only core scores 3.00%. Two analytic, *fitter-only* families —
-grid-partition / panel ops (F2) and per-object mapping (F1) — lift it from 3.00% to
-**5.50%** (12→22 tasks, +10, **zero regressions**; F2 +8, F1 +2), leaving the
-search budget untouched. A third family (object selection / counting, F4) was built
-and measured but added zero solves and is not emitted — an honest negative result.
-Training and ARC-AGI-2 rows are the enumerative core, not re-measured with the
-families. See [`SPEC.md`](SPEC.md) and
-[`reports/arc1_eval_families.json`](reports/arc1_eval_families.json).
+† **With the object/panel fitter families**; the enumerative-only core scores
+9.25% (training) / 3.00% (evaluation). Three analytic, *fitter-only* families —
+grid-partition / panel ops (F2), per-object mapping (F1), and object selection /
+counting (F4) — lift ARC-AGI-1 evaluation 3.00%→**5.75%** (12→23, +11) and training
+9.25%→**13.50%** (37→54, +17), with **zero regressions** on both splits and the
+search budget untouched. ARC-AGI-2 evaluation is unchanged. Reproduce with
+[`scripts/eval_ablation.py`](scripts/eval_ablation.py); see [`SPEC.md`](SPEC.md)
+and [`reports/`](reports/) (`*_families.json`).
 
 The headline finding is qualitative as much as numeric: nearly every program that
 fits the demonstrations also generalises to the held-out test input (≈95–100%
@@ -96,7 +95,7 @@ src/arc_solver/
   viz/      ARC-palette grid rendering
   cli/      solve / run_eval / make_submission
 notebooks/  kaggle_submission.ipynb  (self-contained, offline)
-tests/      154 tests, ~94% coverage
+tests/      157 tests, ~94% coverage
 docs/       WRITEUP.md (paper), THEORY.md (extended), ADRs
 ```
 

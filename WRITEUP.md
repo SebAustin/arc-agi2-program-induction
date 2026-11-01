@@ -93,13 +93,13 @@ pretraining, no network. We score the competition's normalised pass@2.
 
 | Dataset | Tasks | pass@2 | train-solve |
 | --- | --- | --- | --- |
-| ARC-AGI-1 training | 400 | **9.25%** | 9.75% |
-| ARC-AGI-1 evaluation | 400 | **5.50%**† | 5.50% |
+| ARC-AGI-1 training | 400 | **13.50%**† | 13.50% |
+| ARC-AGI-1 evaluation | 400 | **5.75%**† | 5.75% |
 | ARC-AGI-2 evaluation | 120 | **0.0%** | 0.0% |
 
-† ARC-AGI-1 evaluation **with the object/panel fitter families** (below); the
-enumerative-only core scores 3.00%. The training and ARC-AGI-2 rows are the
-enumerative core, not re-measured with the families.
+† With the object/panel fitter families (below); the enumerative-only core scores
+9.25% (training) and 3.00% (evaluation). ARC-AGI-2 evaluation is unchanged, and
+both re-measured ARC-AGI-1 splits are regression-free.
 
 The most informative number is not the headline rate but the **gap between
 train-solve and pass@2**: on ARC-AGI-1 training, 39/400 tasks admit a program and
@@ -117,19 +117,21 @@ the TTT extension, which attack exactly that depth/expressivity ceiling.
 
 **Object and panel fitter families.** A structural audit of the unsolved
 ARC-AGI-1 evaluation tasks found their dominant signature is *objectness and
-in-place construction*, not the global whole-grid transforms the core favours. Two
-analytic fitter families close part of that gap. *Grid-partition / panel ops* (F2)
-detect separator lines and either select a panel or combine panels cellwise
-through a truth table **learned from the demonstrations** (generalising AND/OR/XOR
-to $k$ panels). *Per-object mapping* (F1) recolours or transforms each connected
-object independently, under a small search over object models (4-/8-adjacency,
-single-/multi-colour, background). Both are *fitter-only* — emitted analytically
-and verified, never enumerated — so the search budget and per-task runtime are
-unchanged. Together they lift ARC-AGI-1 evaluation from 3.00% to **5.50%** (12→22
-tasks, +10, **zero regressions**; F2 +8, F1 +2). A third family, object
-*selection / counting* (F4), was built and measured identically but added **zero**
-evaluation solves and is not emitted — an honest negative result marking where the
-selection rules ARC actually uses exceed simple size/shape/colour criteria.
+in-place construction*, not the global whole-grid transforms the core favours.
+Three analytic, *fitter-only* families close part of that gap — emitted
+analytically and verified, never enumerated, so the search budget and per-task
+runtime are unchanged. *Grid-partition / panel ops* (F2) detect separators and
+either select a panel or combine panels cellwise via a truth table learned from
+the demonstrations (generalising AND/OR/XOR to $k$ panels). *Per-object mapping*
+(F1) recolours or transforms each object independently, keyed by a low-capacity
+attribute (size, colour, size-rank). *Object selection / counting* (F4) picks an
+object by a learned criterion (size, position, uniqueness, bounding box) and crops
+or counts. Together they lift ARC-AGI-1 **evaluation** 3.00%→**5.75%** (12→23,
++11) and **training** 9.25%→**13.50%** (37→54, +17), with **zero regressions** on
+both splits. One excluded case is instructive: a high-capacity *shape→colour* key
+fit the training objects by memorisation and shadowed a correct enumerative solve
+through the engine's early-stop — dropped in favour of the generalising keys,
+exactly the Occam discipline the prior encodes.
 
 **Ablations.** Removing the fitted proposer leaves the enumerator unable to reach
 colour-bijection and exact-scale tasks within budget; removing behavioural
@@ -171,6 +173,6 @@ documented, and reproducible.
 ---
 
 *Code & reproducibility:* public notebook (`notebooks/kaggle_submission.ipynb`,
-offline) and repository with 154 tests; see `docs/THEORY.md` for the extended
+offline) and repository with 157 tests; see `docs/THEORY.md` for the extended
 derivation and `reports/` for per-task tables. Leaderboard submission ID: _to be
 recorded on Kaggle run_.

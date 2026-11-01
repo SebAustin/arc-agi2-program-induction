@@ -155,6 +155,20 @@ def _select_index(objs: list, criterion: tuple) -> int | None:
             i for i, c in enumerate(colors) if c is not None and colors.count(c) == 1
         ]
         return uniq[0] if len(uniq) == 1 else None
+    if kind == "largest_bbox":
+        return max(range(len(objs)), key=lambda i: objs[i].height * objs[i].width)
+    if kind == "topmost":
+        return min(range(len(objs)), key=lambda i: objs[i].bbox[0])
+    if kind == "bottommost":
+        return max(range(len(objs)), key=lambda i: objs[i].bbox[2])
+    if kind == "leftmost":
+        return min(range(len(objs)), key=lambda i: objs[i].bbox[1])
+    if kind == "rightmost":
+        return max(range(len(objs)), key=lambda i: objs[i].bbox[3])
+    if kind == "unique_size":
+        sizes = [o.size for o in objs]
+        uniq = [i for i, s in enumerate(sizes) if sizes.count(s) == 1]
+        return uniq[0] if len(uniq) == 1 else None
     return None
 
 

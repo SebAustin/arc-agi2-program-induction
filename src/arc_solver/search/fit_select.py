@@ -19,7 +19,18 @@ from arc_solver.grid.grid_ops import to_np
 from arc_solver.grid.objects import ObjectModel, candidate_models, extract_objects
 from arc_solver.io.task import Task
 
-_CRITERIA = (("largest",), ("smallest",), ("unique_shape",), ("unique_color",))
+_CRITERIA = (
+    ("largest",),
+    ("smallest",),
+    ("unique_shape",),
+    ("unique_color",),
+    ("unique_size",),
+    ("largest_bbox",),
+    ("topmost",),
+    ("bottommost",),
+    ("leftmost",),
+    ("rightmost",),
+)
 
 
 def _eq(result, target) -> bool:

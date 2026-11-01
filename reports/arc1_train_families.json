@@ -1,0 +1,18 @@
+{
+  "data": "training",
+  "families": [
+    "F1",
+    "F2",
+    "F4"
+  ],
+  "n": 400,
+  "core_pass_at_2": 0.0925,
+  "pass_at_2": 0.135,
+  "n_solved": 54,
+  "gains_by_family": {
+    "F2": 10,
+    "F1": 6,
+    "F4": 1
+  },
+  "regressions": []
+}
